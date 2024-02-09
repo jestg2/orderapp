@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Report</title>
+</head>
+<body>
+    <h1>Inventory Report</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Remaining Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product_id, product_data in inventory_data.items %}
+            <tr>
+                <td>{{ product_data.product_id }}</td>
+                <td>{{ product_data.name }}</td>
+                <td>{{ product_data.remaining_quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+     <p>Balance: {{ balance }} Lek </p>
+    <br>
+<button type="submit"><a href="/home"> Go back </a> </button>
+</body>
+</html>

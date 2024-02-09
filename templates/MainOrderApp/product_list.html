@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <!-- CSS styles -->
+    <style>
+        /* Add your CSS styles here */
+    </style>
+</head>
+
+<body>
+    <h2>Products</h2>
+    <div class="product-grid">
+        {% for product in products %}
+            <div class="product" data-product-id="{{ product.product_id }}">
+                <h3>{{ product.name }}</h3>
+                <p>{{ product.sale_price }} {{ product.currency }}</p>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="checkout">
+        <h2>Checkout</h2>
+        <ul id="checkout-list"></ul>
+        <button id="checkout-button">Checkout</button>
+        <button id="clear-cart-button">Clear Cart</button>
+        <div id="total-price"></div>
+    </div>
+    <button type="submit" >
+        <a href="/home" class="main">Go to main</a>
+    </button>
+
+    <!-- JavaScript code -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkoutList = document.getElementById("checkout-list");
+            const totalPriceElement = document.getElementById("total-price");
+
+            // Function to calculate and display total price
+            function calculateTotalPrice() {
+                let totalPrice = 0;
+                checkoutList.querySelectorAll("li").forEach(item => {
+                    const productId = item.dataset.productId;
+                    const quantity = parseInt(item.querySelector(".quantity").textContent);
+                    const productPrice = parseFloat(document.querySelector(`[data-product-id="${productId}"] p`).textContent);
+                    totalPrice += quantity * productPrice;
+                });
+                totalPriceElement.textContent = `Total: ${totalPrice.toFixed(2)}`;
+            }
+
+            // Function to handle checkout
+            function handleCheckout() {
+                // Collect selected product IDs, quantities, and total price
+                const selectedProducts = [];
+                let totalPrice = 0; // Initialize total price
+
+                checkoutList.querySelectorAll("li").forEach(item => {
+                    const productId = item.dataset.productId;
+                    const quantity = parseInt(item.querySelector(".quantity").textContent);
+                    const productPrice = parseFloat(document.querySelector(`[data-product-id="${productId}"] p`).textContent);
+                    totalPrice += quantity * productPrice; // Calculate total price
+                    selectedProducts.push({ productId, quantity });
+                });
+
+                // Send selected product data and total price to backend via AJAX
+                fetch(window.location.pathname, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({ selectedProducts, totalPrice }) // Include total price in the request body
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Handle successful checkout
+                        console.log("Checkout successful");
+                        clearCart(); // Clear the cart after successful checkout
+                    } else {
+                        // Handle error during checkout
+                        console.error("Error during checkout:", response.statusText);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error during checkout:", error);
+                });
+            }
+
+
+            // Function to clear the cart
+            function clearCart() {
+                checkoutList.innerHTML = ""; // Remove all items from the checkout list
+                totalPriceElement.textContent = ""; // Clear the total price display
+            }
+
+            // Checkout button click event handler
+            document.getElementById("checkout-button").addEventListener("click", function() {
+                handleCheckout();
+            });
+
+            // Clear cart button click event handler
+            document.getElementById("clear-cart-button").addEventListener("click", function() {
+                clearCart();
+            });
+
+            // Product click event handler
+            document.querySelectorAll(".product").forEach(product => {
+                product.addEventListener("click", function() {
+                    const productId = this.dataset.productId;
+                    const productName = this.querySelector("h3").textContent;
+
+                    const existingItem = checkoutList.querySelector(`[data-product-id="${productId}"]`);
+                    if (existingItem) {
+                        // Increment the quantity if the product is already in the list
+                        const quantityElement = existingItem.querySelector(".quantity");
+                        quantityElement.textContent = parseInt(quantityElement.textContent) + 1;
+                    } else {
+                        // Add the product to the checkout list
+                        const listItem = document.createElement("li");
+                        listItem.dataset.productId = productId;
+                        listItem.innerHTML = `
+                            ${productName} <span class="quantity">1</span>
+                        `;
+                        checkoutList.appendChild(listItem);
+                    }
+
+                    // Update total price
+                    calculateTotalPrice();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
